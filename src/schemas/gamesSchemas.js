@@ -8,4 +8,4 @@ const createGameSchema = Joi.object({
     pricePerDay: Joi.number().positive().required()
 });
 
-export { createGameSchema };
+export default createGameSchema;

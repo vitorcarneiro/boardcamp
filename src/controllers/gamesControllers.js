@@ -3,8 +3,7 @@ import connection from "../db.js";
 export async function readGames(req, res) {
     try {
         const gamesList = await connection.query(`
-            SELECT *
-                FROM games;
+            SELECT * FROM games;
         `);
         return res.send(gamesList.rows);
 
@@ -18,7 +17,7 @@ export async function createGame(req, res) {
     
     try {
         const gameExists = await connection.query(`SELECT * FROM games WHERE name=$1`, [name]);
-        if (gameExists.rows.length > 0) { return res.sendStatus(409) }
+        if (gameExists.rows.length > 0) { return res.sendStatus(400) }
 
         await connection.query(`
             INSERT INTO games (name, image, "stockTotal", "categoryId", "pricePerDay") 
