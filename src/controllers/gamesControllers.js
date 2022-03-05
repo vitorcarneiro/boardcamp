@@ -14,10 +14,16 @@ export async function readGames(req, res) {
 
 export async function createGame(req, res) {
     const { name, image, stockTotal, categoryId, pricePerDay} = req.body;
+    const stockTotalNumber = parseInt(stockTotal);
+    const pricePerDayNumber = parseInt(pricePerDay);
+
+    if (isNaN(stockTotalNumber) || isNaN(pricePerDayNumber) || stockTotalNumber < 0 || pricePerDayNumber < 0) {
+        return res.sendStatus(400);
+    }
     
     try {
         const gameExists = await connection.query(`SELECT * FROM games WHERE name=$1`, [name]);
-        if (gameExists.rows.length > 0) { return res.sendStatus(400) }
+        if (gameExists.rows.length > 0) { return res.sendStatus(409) }
 
         await connection.query(`
             INSERT INTO games (name, image, "stockTotal", "categoryId", "pricePerDay") 
