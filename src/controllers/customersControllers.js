@@ -1,11 +1,12 @@
 import connection from "../db.js";
+import { createGameValidationMiddleware } from "../middlewares/gamesMiddlewares.js";
 
 export async function createCustomer(req, res) {
     const { name, phone, cpf, birthday } = req.body;
     
     try {
         const customerExists = await connection.query(`SELECT * FROM customers WHERE cpf=$1`, [cpf]);
-        if (customerExists.rows.length > 0) { return res.sendStatus(409) }
+        if (customerExists.rows.length > 0) { return res.status(409).send("cpf registered") }
 
         await connection.query(`
             INSERT INTO customers (name, phone, cpf, birthday)
