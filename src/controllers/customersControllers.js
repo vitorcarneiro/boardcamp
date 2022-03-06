@@ -20,9 +20,17 @@ export async function createCustomer(req, res) {
 }
 
 export async function readCustomers(req, res) {
+    const cpfQueryRegex = /^[0-9]*$/;
+
+    let cpfQuery = '';
+    if (req.query.cpf) {
+        if (!cpfQueryRegex.test(req.query.cpf)) { return res.status(400).send("cpf query must a string of numbers")}
+        cpfQuery = `WHERE cpf LIKE '${req.query.cpf}%'`;
+    }
+
     try {
         const customersList = await connection.query(`
-            SELECT * FROM customers;
+            SELECT * FROM customers ${cpfQuery}
         `);
         return res.send(customersList.rows);
 
