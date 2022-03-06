@@ -1,12 +1,11 @@
 import connection from "../db.js";
-import { createGameValidationMiddleware } from "../middlewares/gamesMiddlewares.js";
 
 export async function createCustomer(req, res) {
     const { name, phone, cpf, birthday } = req.body;
     
     try {
         const customerExists = await connection.query(`SELECT * FROM customers WHERE cpf=$1`, [cpf]);
-        if (customerExists.rows.length > 0) { return res.status(409).send("cpf registered") }
+        if (customerExists.rows.length > 0) { return res.status(409).send("cpf aready in use") }
 
         await connection.query(`
             INSERT INTO customers (name, phone, cpf, birthday)
@@ -16,7 +15,7 @@ export async function createCustomer(req, res) {
         return res.sendStatus(201);
 
     } catch (error) {
-        return res.sendStatus(500);
+        res.status(500).send(error);
     }
 }
 
@@ -36,6 +35,21 @@ export async function readCustomers(req, res) {
         return res.send(customersList.rows);
 
     } catch (error) {
-        res.sendStatus(500);
+        res.status(500).send(error);
     }
 }
+
+export async function getCustomer(req, res) {
+    const { id } = req.params;
+  
+    try {
+      const customer = await connection.query(`SELECT * FROM customers WHERE id=$1`, [id]);
+      if (customer.rowCount === 0) {
+        return res.status(404).send("customer id not found");
+      }
+  
+      res.send(customer.rows[0]);
+    } catch (error) {
+      res.status(500).send(error);
+    }
+  }
