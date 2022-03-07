@@ -71,9 +71,21 @@ export async function readRentals(req, res) {
         limitQuery = `LIMIT ${req.query.limit}`;
     }
 
+    let orderQuery = '';
+    if (req.query.order) {
+        const getRentalsColumns = await connection.query(`SELECT * FROM rentals;`);
+        const rentalsColumns = Object.getOwnPropertyNames(getRentalsColumns.rows[0]);
+        if (!rentalsColumns.includes(req.query.order)) {return res.status(400).send(`column ${req.query.order} do not exist on rentals`) }
+        orderQuery = `ORDER BY "${req.query.order}"`;
+
+        if (req.query.desc === "true") {
+            orderQuery = `ORDER BY "${req.query.order}" DESC`;
+        }
+    }
+
     try {
         const rentalsList = await connection.query(`
-            SELECT * FROM rentals ${clauseSql} ${customerIdQuery} ${logicalOperator} ${gameIdQuery} ${offsetQuery} ${limitQuery};
+            SELECT * FROM rentals ${clauseSql} ${customerIdQuery} ${logicalOperator} ${gameIdQuery} ${offsetQuery} ${limitQuery} ${orderQuery};
         `);
         return res.send(rentalsList.rows);
 

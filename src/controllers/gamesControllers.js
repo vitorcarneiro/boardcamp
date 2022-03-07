@@ -22,9 +22,21 @@ export async function readGames(req, res) {
         limitQuery = `LIMIT ${req.query.limit}`;
     }
 
+    let orderQuery = '';
+    if (req.query.order) {
+        const getGamesColumns = await connection.query(`SELECT * FROM games;`);
+        const gamesColumns = Object.getOwnPropertyNames(getGamesColumns.rows[0]);
+        if (!gamesColumns.includes(req.query.order)) {return res.status(400).send(`column ${req.query.order} do not exist on games`) }
+        orderQuery = `ORDER BY "${req.query.order}"`;
+
+        if (req.query.desc === "true") {
+            orderQuery = `ORDER BY "${req.query.order}" DESC`;
+        }
+    }
+
     try {
         const gamesList = await connection.query(`
-            SELECT * FROM games ${gameNameQuery} ${offsetQuery} ${limitQuery};
+            SELECT * FROM games ${gameNameQuery} ${offsetQuery} ${limitQuery} ${orderQuery};
         `);
         return res.send(gamesList.rows);
 

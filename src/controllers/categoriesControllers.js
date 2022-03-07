@@ -15,9 +15,21 @@ export async function readCategories(req, res) {
         limitQuery = `LIMIT ${req.query.limit}`;
     }
 
+    let orderQuery = '';
+    if (req.query.order) {
+        const getCategoriesColumns = await connection.query(`SELECT * FROM categories;`);
+        const categoriesColumns = Object.getOwnPropertyNames(getCategoriesColumns.rows[0]);
+        if (!categoriesColumns.includes(req.query.order)) {return res.status(400).send(`column ${req.query.order} do not exist on categories`) }
+        orderQuery = `ORDER BY "${req.query.order}"`;
+
+        if (req.query.desc === "true") {
+            orderQuery = `ORDER BY "${req.query.order}" DESC`;
+        }
+    }
+
     try {
         const categoriesList = await connection.query(`
-            SELECT * FROM categories ${offsetQuery} ${limitQuery};
+            SELECT * FROM categories ${offsetQuery} ${limitQuery} ${orderQuery};
         `);
         return res.send(categoriesList.rows);
 

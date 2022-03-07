@@ -40,9 +40,21 @@ export async function readCustomers(req, res) {
         limitQuery = `LIMIT ${req.query.limit}`;
     }
 
+    let orderQuery = '';
+    if (req.query.order) {
+        const getCustomersColumns = await connection.query(`SELECT * FROM customers;`);
+        const customersColumns = Object.getOwnPropertyNames(getCustomersColumns.rows[0]);
+        if (!customersColumns.includes(req.query.order)) {return res.status(400).send(`column ${req.query.order} do not exist on customers`) }
+        orderQuery = `ORDER BY "${req.query.order}"`;
+
+        if (req.query.desc === "true") {
+            orderQuery = `ORDER BY "${req.query.order}" DESC`;
+        }
+    }
+
     try {
         const customersList = await connection.query(`
-            SELECT * FROM customers ${cpfQuery} ${offsetQuery} ${limitQuery};
+            SELECT * FROM customers ${cpfQuery} ${offsetQuery} ${limitQuery} ${orderQuery};
         `);
         return res.send(customersList.rows);
 
