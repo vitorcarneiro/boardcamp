@@ -36,27 +36,16 @@ export async function createRental(req, res) {
 
 export async function readRentals(req, res) {
     const numberRegex = /^[0-9]*$/;
+    const queryArray = [];
 
-    let customerIdQuery = '';
     if (req.query.customerId) {
         if (!numberRegex.test(req.query.customerId)) { return res.status(400).send("customerId query must be a number")}
-        customerIdQuery = `"customerId"=${req.query.customerId}`;
+        queryArray.push(`"customerId"=${req.query.customerId}`);
     }
 
-    let gameIdQuery = '';
     if (req.query.gameId) {
         if (!numberRegex.test(req.query.gameId)) { return res.status(400).send("gameId query must be a number")}
-        gameIdQuery = `"gameId"=${req.query.gameId}`;
-    }
-
-    let clauseSql = '';
-    if (req.query.customerId || req.query.gameId) {
-        clauseSql = `WHERE`;
-    }
-
-    let logicalOperator = '';
-    if (req.query.customerId && req.query.gameId) {
-        logicalOperator = `AND`;
+        queryArray.push(`"gameId"=${req.query.gameId}`);
     }
 
     let offsetQuery = '';
@@ -83,9 +72,27 @@ export async function readRentals(req, res) {
         }
     }
 
+    if (req.query.status) {
+        const statusRegex = /^(open|closed)$/;
+        if (!statusRegex.test(req.query.status)) {return res.status(400).send(`status query must be open or closed`) }
+        if (req.query.status === "open" ) {
+            queryArray.push(`"returnDate" IS NULL`);
+        } else {
+            queryArray.push(`"returnDate" IS NOT NULL`);
+        }
+    }
+
+    if (req.query.startDate) {
+        const dateRegex = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/;
+        if (!dateRegex.test(req.query.startDate)) { return res.status(400).send("startDate must be a date in this format YYYY-MM-DD")}
+        queryArray.push(`"startDate" >= "${dayjs(req.query.startDate)}"`);
+    }
+
     try {
         const rentalsList = await connection.query(`
-            SELECT * FROM rentals ${clauseSql} ${customerIdQuery} ${logicalOperator} ${gameIdQuery} ${offsetQuery} ${limitQuery} ${orderQuery};
+            SELECT * FROM rentals
+                ${queryArray.length > 1 ? 'WHERE' : ''} ${queryArray.join(' AND ')}
+                ${offsetQuery} ${limitQuery} ${orderQuery};
         `);
         return res.send(rentalsList.rows);
 
