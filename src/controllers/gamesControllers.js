@@ -2,6 +2,7 @@ import connection from "../db.js";
 
 export async function readGames(req, res) {
     const gameNameQueryRegex = /\b(ALTER|CREATE|DELETE|DROP|EXEC(UTE){0,1}|INSERT( +INTO){0,1}|MERGE|SELECT|UPDATE|UNION( +ALL){0,1})\b/;
+    const numberRegex = /^[0-9]*$/;
 
     let gameNameQuery = '';
     if (req.query.name) {
@@ -9,9 +10,21 @@ export async function readGames(req, res) {
         gameNameQuery = `WHERE name iLIKE '${req.query.name}%'`;
     }
 
+    let offsetQuery = '';
+    if (req.query.offset) {
+        if (!numberRegex.test(req.query.offset)) { return res.status(400).send("offset query must be a number")}
+        offsetQuery = `OFFSET ${req.query.offset}`;
+    }
+
+    let limitQuery = '';
+    if (req.query.limit) {
+        if (!numberRegex.test(req.query.limit)) { return res.status(400).send("limit query must be a number")}
+        limitQuery = `LIMIT ${req.query.limit}`;
+    }
+
     try {
         const gamesList = await connection.query(`
-            SELECT * FROM games ${gameNameQuery}
+            SELECT * FROM games ${gameNameQuery} ${offsetQuery} ${limitQuery};
         `);
         return res.send(gamesList.rows);
 

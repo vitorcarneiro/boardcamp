@@ -1,9 +1,23 @@
 import connection from "../db.js";
 
 export async function readCategories(req, res) {
+    const numberRegex = /^[0-9]*$/;
+
+    let offsetQuery = '';
+    if (req.query.offset) {
+        if (!numberRegex.test(req.query.offset)) { return res.status(400).send("offset query must be a number")}
+        offsetQuery = `OFFSET ${req.query.offset}`;
+    }
+
+    let limitQuery = '';
+    if (req.query.limit) {
+        if (!numberRegex.test(req.query.limit)) { return res.status(400).send("limit query must be a number")}
+        limitQuery = `LIMIT ${req.query.limit}`;
+    }
+
     try {
         const categoriesList = await connection.query(`
-            SELECT * FROM categories;
+            SELECT * FROM categories ${offsetQuery} ${limitQuery};
         `);
         return res.send(categoriesList.rows);
 

@@ -20,17 +20,29 @@ export async function createCustomer(req, res) {
 }
 
 export async function readCustomers(req, res) {
-    const cpfQueryRegex = /^[0-9]*$/;
+    const numberRegex = /^[0-9]*$/;
 
     let cpfQuery = '';
     if (req.query.cpf) {
-        if (!cpfQueryRegex.test(req.query.cpf)) { return res.status(400).send("cpf query must be a string of numbers")}
+        if (!numberRegex.test(req.query.cpf)) { return res.status(400).send("cpf query must be a string of numbers")}
         cpfQuery = `WHERE cpf LIKE '${req.query.cpf}%'`;
+    }
+
+    let offsetQuery = '';
+    if (req.query.offset) {
+        if (!numberRegex.test(req.query.offset)) { return res.status(400).send("offset query must be a number")}
+        offsetQuery = `OFFSET ${req.query.offset}`;
+    }
+
+    let limitQuery = '';
+    if (req.query.limit) {
+        if (!numberRegex.test(req.query.limit)) { return res.status(400).send("limit query must be a number")}
+        limitQuery = `LIMIT ${req.query.limit}`;
     }
 
     try {
         const customersList = await connection.query(`
-            SELECT * FROM customers ${cpfQuery}
+            SELECT * FROM customers ${cpfQuery} ${offsetQuery} ${limitQuery};
         `);
         return res.send(customersList.rows);
 

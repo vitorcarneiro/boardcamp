@@ -35,17 +35,17 @@ export async function createRental(req, res) {
 }
 
 export async function readRentals(req, res) {
-    const idRegex = /^[0-9]*$/;
+    const numberRegex = /^[0-9]*$/;
 
     let customerIdQuery = '';
     if (req.query.customerId) {
-        if (!idRegex.test(req.query.customerId)) { return res.status(400).send("customerId query must be a number")}
+        if (!numberRegex.test(req.query.customerId)) { return res.status(400).send("customerId query must be a number")}
         customerIdQuery = `"customerId"=${req.query.customerId}`;
     }
 
     let gameIdQuery = '';
     if (req.query.gameId) {
-        if (!idRegex.test(req.query.gameId)) { return res.status(400).send("gameId query must be a number")}
+        if (!numberRegex.test(req.query.gameId)) { return res.status(400).send("gameId query must be a number")}
         gameIdQuery = `"gameId"=${req.query.gameId}`;
     }
 
@@ -59,9 +59,21 @@ export async function readRentals(req, res) {
         logicalOperator = `AND`;
     }
 
+    let offsetQuery = '';
+    if (req.query.offset) {
+        if (!numberRegex.test(req.query.offset)) { return res.status(400).send("offset query must be a number")}
+        offsetQuery = `OFFSET ${req.query.offset}`;
+    }
+
+    let limitQuery = '';
+    if (req.query.limit) {
+        if (!numberRegex.test(req.query.limit)) { return res.status(400).send("limit query must be a number")}
+        limitQuery = `LIMIT ${req.query.limit}`;
+    }
+
     try {
         const rentalsList = await connection.query(`
-            SELECT * FROM rentals ${clauseSql} ${customerIdQuery} ${logicalOperator} ${gameIdQuery}
+            SELECT * FROM rentals ${clauseSql} ${customerIdQuery} ${logicalOperator} ${gameIdQuery} ${offsetQuery} ${limitQuery};
         `);
         return res.send(rentalsList.rows);
 
@@ -87,6 +99,24 @@ export async function endRental(req, res) {
 
         await connection.query(`
             UPDATE rentals SET "returnDate"=$1, "delayFee"=$2 WHERE id=$3`, [returnDate, delayFee, id]);
+
+        return res.sendStatus(200);
+
+    } catch (error) {
+        res.status(500).send(error);
+    }
+}
+
+export async function deleteRental(req, res) {
+    const { id } = req.params;
+
+    try {
+        const rental = await connection.query(`SELECT * FROM rentals WHERE id=$1`, [id]);
+        if (rental.rowCount === 0) { return res.status(404).send("rental id not found"); }
+        if (rental.rows[0].returnDate) { return res.status(400).send("rental is already ended, not allowed to delete"); }
+
+        await connection.query(`
+            DELETE FROM rentals WHERE id=$1`, [id]);
 
         return res.sendStatus(200);
 
