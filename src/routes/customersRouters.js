@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { createCustomer, readCustomers } from "../controllers/customersControllers.js"
+import { createCustomer, readCustomers, getCustomer, updateCustomer } from "../controllers/customersControllers.js"
 import { createCustomerValidationMiddleware } from "../middlewares/customersMiddlewares.js"
 
-const createCustomerRouter = Router();
-createCustomerRouter.post("/customers", createCustomerValidationMiddleware, createCustomer);
+const customersRouters = Router();
+customersRouters.post("/customers", createCustomerValidationMiddleware, createCustomer);
+customersRouters.get("/customers", readCustomers);
+customersRouters.get('/customers/:id', getCustomer);
+customersRouters.put('/customers/:id', createCustomerValidationMiddleware, updateCustomer);
 
-const readCustomerRouter = Router();
-readCustomerRouter.get("/customers", readCustomers);
-
-export { createCustomerRouter, readCustomerRouter };
+export default customersRouters;

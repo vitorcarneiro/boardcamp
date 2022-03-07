@@ -17,7 +17,7 @@ export async function createCategory(req, res) {
     
     try {
         const categoryExists = await connection.query(`SELECT * FROM categories WHERE name=$1`, [name]);
-        if (categoryExists.rows.length > 0) { return res.sendStatus(409) }
+        if (categoryExists.rows.length > 0) { return res.status(409).send('category name already in use') }
 
         await connection.query(`
             INSERT INTO categories (name) VALUES ($1)`, [name]);
